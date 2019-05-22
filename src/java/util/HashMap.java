@@ -339,22 +339,22 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         return (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16);
     }
 
-    /**
+    /** 若对象 x的类是 C,若 C实现了 Comparable<C> 接口,那么返回 C，否则返回 null
      * Returns x's Class if it is of the form "class C implements
      * Comparable<C>", else null.
      */
     static Class<?> comparableClassFor(Object x) {
         if (x instanceof Comparable) {
             Class<?> c; Type[] ts, as; Type t; ParameterizedType p;
-            if ((c = x.getClass()) == String.class) // bypass checks
-                return c;
-            if ((ts = c.getGenericInterfaces()) != null) {
-                for (int i = 0; i < ts.length; ++i) {
-                    if (((t = ts[i]) instanceof ParameterizedType) &&
+            if ((c = x.getClass()) == String.class) // bypass checks 若 x是 String类型(String类型也实现了 Comparable接口)
+                return c; // 返回 String.class
+            if ((ts = c.getGenericInterfaces()) != null) { // 获取 c直接实现的接口
+                for (int i = 0; i < ts.length; ++i) { // 遍历实现的接口
+                    if (((t = ts[i]) instanceof ParameterizedType) && // 接口 t是个泛型接口
                         ((p = (ParameterizedType)t).getRawType() ==
-                         Comparable.class) &&
+                         Comparable.class) && // 该泛型接口 t的原始类型 p 是 Comparable 接口
                         (as = p.getActualTypeArguments()) != null &&
-                        as.length == 1 && as[0] == c) // type arg is c
+                        as.length == 1 && as[0] == c) // type arg is c 该 Comparable接口 p只定义了一个泛型参数, 且 该泛型参数的类型就是 c
                         return c;
                 }
             }
@@ -362,7 +362,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         return null;
     }
 
-    /**
+    /** 1.若 x所属的类是 kc,返回 k.compareTo(x)的比较结果. 2.若 x为空,或者其所属的类不是kc,返回0
      * Returns k.compareTo(x) if x matches kc (k's screened comparable
      * class), else 0.
      */
@@ -554,7 +554,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      */
     public V get(Object key) {
         Node<K,V> e;
-        return (e = getNode(hash(key), key)) == null ? null : e.value;
+        return (e = getNode(hash(key), key)) == null ? null : e.value;// 根据 key及其 hash值查询 node节点，如果存在，则返回该节点的 value值(e.value值也可能为 null).否则返回 null
     }
 
     /**
@@ -567,21 +567,21 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     final Node<K,V> getNode(int hash, Object key) {
         Node<K,V>[] tab; Node<K,V> first, e; int n; K k;
         if ((tab = table) != null && (n = tab.length) > 0 &&
-            (first = tab[(n - 1) & hash]) != null) {
-            if (first.hash == hash && // always check first node
+            (first = tab[(n - 1) & hash]) != null) { // 若哈希表不为空,且 key对应的桶位上不为空
+            if (first.hash == hash && // always check first node // 若桶位中的第一个节点就和指定参数 hash 和 key匹配上了
                 ((k = first.key) == key || (key != null && key.equals(k))))
-                return first;
-            if ((e = first.next) != null) {
-                if (first instanceof TreeNode)
+                return first; // 返回桶位中的第一个节点
+            if ((e = first.next) != null) { // 若桶中的第一个节点没有匹配上,而且有后续节点
+                if (first instanceof TreeNode) // 若当前的桶位采用红黑树，则调用红黑树的 get()方法去获取节点
                     return ((TreeNode<K,V>)first).getTreeNode(hash, key);
-                do {
+                do { // 若当前的桶位未采用红黑树,即桶中节点结构为链表. 遍历链表
                     if (e.hash == hash &&
                         ((k = e.key) == key || (key != null && key.equals(k))))
-                        return e;
+                        return e;// 遍历链表,找到节点的 hash 和 key均匹配的就返回匹配的 node
                 } while ((e = e.next) != null);
             }
         }
-        return null;
+        return null;// 找不到匹配的 node 就返回 null
     }
 
     /**
@@ -627,9 +627,9 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         Node<K,V>[] tab; Node<K,V> p; int n, i;
         if ((tab = table) == null || (n = tab.length) == 0)// 若哈希表为空，调用 resize()创建一个哈希表，并用变量 n记录哈希表长度
             n = (tab = resize()).length;
-        if ((p = tab[i = (n - 1) & hash]) == null) // p保存 获取数组上存放的 node. 槽位未放置元素的情况. (n - 1) & hash 计算 key将被放置的槽位
+        if ((p = tab[i = (n - 1) & hash]) == null) // 要保存元素的桶位未放置元素的情况. p用于保存 获取该桶位上存放的 node.  (n - 1) & hash 计算 key将被放置的槽位
             tab[i] = newNode(hash, key, value, null);// 直接将键值对插入到 map中即可
-        else {
+        else {// 该桶位上有元素
             Node<K,V> e; K k;
             if (p.hash == hash &&
                 ((k = p.key) == key || (key != null && key.equals(k))))// hash 和 equals都相同.  桶位中第一个元素的 hash值(之前插入时保存了插入元素的 hash值) 和 key的 hash相同 并且 equals比较相同
@@ -659,7 +659,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
             }
         }
         ++modCount;
-        if (++size > threshold)
+        if (++size > threshold) // size加 1, 元素数量 超过 阈值,扩容
             resize();
         afterNodeInsertion(evict);
         return null;// 新插入的元素返回 null
@@ -706,7 +706,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         if (oldTab != null) {// 若旧 table不为空，将旧 table中的元素复制到新的 table中
             for (int j = 0; j < oldCap; ++j) {// 遍历旧哈希表的每个桶，将旧哈希表中的桶复制到新的哈希表中
                 Node<K,V> e;
-                if ((e = oldTab[j]) != null) {// 如果旧桶不为 null，使用 e记录旧桶
+                if ((e = oldTab[j]) != null) {// 如果旧桶位元素不为 null，使用 e记录旧桶位元素
                     oldTab[j] = null;// 将旧桶置为null
                     if (e.next == null)// 如果旧桶中只有一个 node
                         newTab[e.hash & (newCap - 1)] = e;// 重新散列. 将 e也就是 oldTab[j]放入 newTab中 e.hash & (newCap - 1)的位置
@@ -754,22 +754,22 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      */
     final void treeifyBin(Node<K,V>[] tab, int hash) {
         int n, index; Node<K,V> e;
-        if (tab == null || (n = tab.length) < MIN_TREEIFY_CAPACITY)// 若桶数组 table为空,或者桶数组 table的长度小于 MIN_TREEIFY_CAPACITY,默认64,不符合转化为红黑树的条件
+        if (tab == null || (n = tab.length) < MIN_TREEIFY_CAPACITY) // 若桶数组 table为空,或者桶数组 table的长度小于 MIN_TREEIFY_CAPACITY,默认64,不符合转化为红黑树的条件.使用扩容解决冲突
             resize();
-        else if ((e = tab[index = (n - 1) & hash]) != null) {
-            TreeNode<K,V> hd = null, tl = null;
-            do {
-                TreeNode<K,V> p = replacementTreeNode(e, null);
-                if (tl == null)
+        else if ((e = tab[index = (n - 1) & hash]) != null) { // 若符合转化为红黑树的条件，而且 hash对应的桶位元素不为 null
+            TreeNode<K,V> hd = null, tl = null; // 红黑树的头、尾节点
+            do { // 遍历链表
+                TreeNode<K,V> p = replacementTreeNode(e, null); // 替换 链表 node 为 TreeNode，建立双向链表
+                if (tl == null) // 确定树头节点
                     hd = p;
-                else {
+                else { // 将所有 TreeNode连接在一起,此时只是组成链表结构(双向链表)
                     p.prev = tl;
                     tl.next = p;
                 }
                 tl = p;
             } while ((e = e.next) != null);
             if ((tab[index] = hd) != null)
-                hd.treeify(tab);
+                hd.treeify(tab);//  对 TreeNode链表进行树化,遍历链表 插入每个节点到 红黑树
         }
     }
 
@@ -814,15 +814,15 @@ public class HashMap<K,V> extends AbstractMap<K,V>
                                boolean matchValue, boolean movable) {
         Node<K,V>[] tab; Node<K,V> p; int n, index;
         if ((tab = table) != null && (n = tab.length) > 0 &&
-            (p = tab[index = (n - 1) & hash]) != null) {
+            (p = tab[index = (n - 1) & hash]) != null) { // 若数组 table不为空 且 key映射到的桶不为空
             Node<K,V> node = null, e; K k; V v;
             if (p.hash == hash &&
-                ((k = p.key) == key || (key != null && key.equals(k))))
+                ((k = p.key) == key || (key != null && key.equals(k)))) // 如果桶上第一个 node的就是要删除的 node
                 node = p;
-            else if ((e = p.next) != null) {
-                if (p instanceof TreeNode)
+            else if ((e = p.next) != null) { // 如果桶内不止一个 node
+                if (p instanceof TreeNode) // 如果桶内的结构为红黑树
                     node = ((TreeNode<K,V>)p).getTreeNode(hash, key);
-                else {
+                else { // 如果桶内的结构为链表
                     do {
                         if (e.hash == hash &&
                             ((k = e.key) == key ||
@@ -830,20 +830,20 @@ public class HashMap<K,V> extends AbstractMap<K,V>
                             node = e;
                             break;
                         }
-                        p = e;
+                        p = e;// p 保存 e的前驱节点
                     } while ((e = e.next) != null);
                 }
             }
             if (node != null && (!matchValue || (v = node.value) == value ||
-                                 (value != null && value.equals(v)))) {
+                                 (value != null && value.equals(v)))) {// node为前面找出的待移除的节点
                 if (node instanceof TreeNode)
                     ((TreeNode<K,V>)node).removeTreeNode(this, tab, movable);
-                else if (node == p)
-                    tab[index] = node.next;
-                else
-                    p.next = node.next;
+                else if (node == p) // 如果桶的第一个node的就是要删除的node
+                    tab[index] = node.next;// 删除 node
+                else // 链表
+                    p.next = node.next;// 移除链表上该 node
                 ++modCount;
-                --size;
+                --size;// size减 1
                 afterNodeRemoval(node);
                 return node;
             }
@@ -1886,7 +1886,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
             return ((parent != null) ? root() : this).find(h, k, null);
         }
 
-        /**
+        /** 比较两个对象,返回值要么大于 0,要么小于 0,不会为 0.先比较两个对象的类名.若两个对象是同一个类型,那么调用 native方法为两个对象生成 hashCode值,再进行比较,hashCode相等的话返回 -1
          * Tie-breaking utility for ordering insertions when equal
          * hashCodes and non-comparable. We don't require a total
          * order, just a consistent insertion rule to maintain
@@ -1897,56 +1897,56 @@ public class HashMap<K,V> extends AbstractMap<K,V>
             int d;
             if (a == null || b == null ||
                 (d = a.getClass().getName().
-                 compareTo(b.getClass().getName())) == 0)
+                 compareTo(b.getClass().getName())) == 0) // 比较类名
                 d = (System.identityHashCode(a) <= System.identityHashCode(b) ?
-                     -1 : 1);
+                     -1 : 1);// 若类名相同,比较生成的 hashCode.若 hashCode也相同,返回 -1
             return d;
         }
 
-        /**
+        /** 将链表转为红黑树
          * Forms tree of the nodes linked from this node.
          * @return root of tree
          */
         final void treeify(Node<K,V>[] tab) {
             TreeNode<K,V> root = null;
-            for (TreeNode<K,V> x = this, next; x != null; x = next) {
-                next = (TreeNode<K,V>)x.next;
-                x.left = x.right = null;
-                if (root == null) {
-                    x.parent = null;
-                    x.red = false;
-                    root = x;
+            for (TreeNode<K,V> x = this, next; x != null; x = next) { // this即为调用此方法的TreeNode
+                next = (TreeNode<K,V>)x.next; // next赋值为 x的下个节点
+                x.left = x.right = null; // 将 x的左右节点设置为空
+                if (root == null) { // 如果还没有根结点, 则将 x设置为根结点
+                    x.parent = null; // 根结点没有父节点
+                    x.red = false; // 根结点必须为黑色
+                    root = x; // 将 x设置为根结点
                 }
-                else {
-                    K k = x.key;
-                    int h = x.hash;
-                    Class<?> kc = null;
-                    for (TreeNode<K,V> p = root;;) {
-                        int dir, ph;
-                        K pk = p.key;
-                        if ((ph = p.hash) > h)
-                            dir = -1;
-                        else if (ph < h)
-                            dir = 1;
-                        else if ((kc == null &&
-                                  (kc = comparableClassFor(k)) == null) ||
-                                 (dir = compareComparables(kc, k, pk)) == 0)
-                            dir = tieBreakOrder(k, pk);
-
+                else { // 已经有根节点了
+                    K k = x.key; // k赋值为 x的 key
+                    int h = x.hash; // h赋值为 x的 hash值
+                    Class<?> kc = null;// 定义 key所属的 Class
+                    for (TreeNode<K,V> p = root;;) { // GOTO1无限循环,直到找到了x节点应处的位置才是出口 // 如果当前节点 x不是根结点, 则从根节点开始查找 属于该节点的位置
+                        int dir, ph; // dir标识方向（左右）、ph标识当前树节点的 hash值
+                        K pk = p.key; // 当前树节点的 key
+                        if ((ph = p.hash) > h) // 如果 x节点的 hash值小于 p节点的 hash值
+                            dir = -1; // 则将 dir赋值为 -1,代表向 p的左边查找
+                        else if (ph < h) // 与上面相反,如果 x节点的 hash值大于 p节点的 hash值
+                            dir = 1; // 则将 dir赋值为 1,代表向 p的右边查找
+                        else if ((kc == null && // 走到这代表 x的 hash值和 p的 hash值相等，则通过其他方式比较 key值
+                                  (kc = comparableClassFor(k)) == null) || // k所在的类型 是否实现了 Comparable接口
+                                 (dir = compareComparables(kc, k, pk)) == 0) // 如果当前树节点和链表节点是相同 Class的实例 并且 当前链表节点的 key实现了 comparable接口，那么通过 comparable的方式再比较两者(即 compareComparables方法)
+                            dir = tieBreakOrder(k, pk); // 上面这些比较若还是相等,使用 tieBreakOrder()最后再比较一次,用来决定向左还是向右查找
+                        // 1.若 dir小于等于 0:当前链表节点一定放置在当前树节点的左侧,但不一定是该树节点的左孩子,也可能是左孩子的右孩子 或者 更深层次的节点。2.若dir大于0:当前链表节点一定放置在当前树节点的右侧,但不一定是该树节点的右孩子,也可能是右孩子的左孩子 或者 更深层次的节点。3.若当前树节点不是叶子节点,那么最终会以当前树节点的左孩子或者右孩子 为 起始节点  再从GOTO1 处开始 重新寻找自己（当前链表节点）的位置.4.若当前树节点就是叶子节点,那么根据dir的值,就可以把当前链表节点挂载到当前树节点的左或者右侧了。挂载之后,还需要重新把树进行平衡。平衡之后,就可以针对下一个链表节点进行处理了。
                         TreeNode<K,V> xp = p;
-                        if ((p = (dir <= 0) ? p.left : p.right) == null) {
-                            x.parent = xp;
-                            if (dir <= 0)
+                        if ((p = (dir <= 0) ? p.left : p.right) == null) { // dir <= 0则向 p左边查找,否则向 p右边查找.如果为 null,则代表该位置即为 x的目标位置,跳出循环
+                            x.parent = xp; // x的父节点即为最后一次遍历的 p节点
+                            if (dir <= 0) // 如果时 dir <= 0, 则代表 x节点为父节点的左节点
                                 xp.left = x;
-                            else
+                            else // 如果时 dir > 0, 则代表 x节点为父节点的右节点
                                 xp.right = x;
-                            root = balanceInsertion(root, x);
+                            root = balanceInsertion(root, x); // 进行红黑树的插入平衡(通过 左旋、右旋 和 改变节点颜色 来保证当前树符合红黑树的要求)
                             break;
                         }
                     }
                 }
             }
-            moveRootToFront(tab, root);
+            moveRootToFront(tab, root);// 确保给定节点是桶中的第一个元素
         }
 
         /**
@@ -2179,91 +2179,91 @@ public class HashMap<K,V> extends AbstractMap<K,V>
 
         /* ------------------------------------------------------------ */
         // Red-black tree methods, all adapted from CLR
-
+        /** 节点左旋 */
         static <K,V> TreeNode<K,V> rotateLeft(TreeNode<K,V> root,
-                                              TreeNode<K,V> p) {
+                                              TreeNode<K,V> p) {// root 根节点, p 要左旋的节点
             TreeNode<K,V> r, pp, rl;
-            if (p != null && (r = p.right) != null) {
-                if ((rl = p.right = r.left) != null)
-                    rl.parent = p;
-                if ((pp = r.parent = p.parent) == null)
+            if (p != null && (r = p.right) != null) { // 要左旋的节点 以及 要左旋的节点的右孩子 不为空
+                if ((rl = p.right = r.left) != null) // 要左旋的节点的 右孩子的 左节点 赋给 要左旋的节点的右孩子 节点为：rl
+                    rl.parent = p; // 设置 rl和 要左旋的节点的 父子关系 (维护子 与 父 的关系)
+                if ((pp = r.parent = p.parent) == null) // 将要左旋的节点的右孩子的父节点  指向 要左旋的节点的父节点，相当于右孩子提升了一层，此时如果父节点为空， 说明r 已经是顶层节点了，应该作为root 并且标为黑色
                     (root = r).red = false;
-                else if (pp.left == p)
-                    pp.left = r;
-                else
+                else if (pp.left == p) // 如果父节点不为空 并且 要左旋的节点是个左孩子
+                    pp.left = r; // 设置 r和 父节点的 父子关系
+                else // 要左旋的节点是个右孩子
                     pp.right = r;
-                r.left = p;
-                p.parent = r;
+                r.left = p; // 要左旋的节点  作为 他的右孩子的左节点
+                p.parent = r; // 要左旋的节点的右孩子  作为  他的父节点
             }
-            return root;
+            return root; // 返回根节点
         }
-
+        /** 节点右旋 */
         static <K,V> TreeNode<K,V> rotateRight(TreeNode<K,V> root,
-                                               TreeNode<K,V> p) {
+                                               TreeNode<K,V> p) { // root 根节点, p 要右旋的节点
             TreeNode<K,V> l, pp, lr;
-            if (p != null && (l = p.left) != null) {
-                if ((lr = p.left = l.right) != null)
-                    lr.parent = p;
-                if ((pp = l.parent = p.parent) == null)
+            if (p != null && (l = p.left) != null) { // 要右旋的节点不为空 以及 要右旋的节点的左孩子不为空
+                if ((lr = p.left = l.right) != null) // 要右旋的节点的左孩子的右节点 赋给 要右旋节点的左孩子 节点为：lr
+                    lr.parent = p; // 设置lr和要右旋的节点的父子关系
+                if ((pp = l.parent = p.parent) == null) // 将要右旋的节点的左孩子的父节点  指向 要右旋的节点的父节点，相当于左孩子提升了一层，此时如果父节点为空， 说明l 已经是顶层节点了，应该作为root 并且标为黑色
                     (root = l).red = false;
-                else if (pp.right == p)
-                    pp.right = l;
-                else
-                    pp.left = l;
-                l.right = p;
-                p.parent = l;
+                else if (pp.right == p) // 如果父节点不为空 并且 要右旋的节点是个右孩子
+                    pp.right = l; // 设置l和父节点的父子关系
+                else // 要右旋的节点是个左孩子
+                    pp.left = l; // 设置l和父节点的父子关系
+                l.right = p; // 要右旋的节点 作为 他左孩子的右节点
+                p.parent = l; // 要右旋的节点的父节点 指向 他的左孩子
             }
             return root;
         }
-
+        /** 保证插入后平衡 */
         static <K,V> TreeNode<K,V> balanceInsertion(TreeNode<K,V> root,
-                                                    TreeNode<K,V> x) {
-            x.red = true;
-            for (TreeNode<K,V> xp, xpp, xppl, xppr;;) {
-                if ((xp = x.parent) == null) {
+                                                    TreeNode<K,V> x) { // root 当前根节点, x 新插入的节点, 返回重新平衡后的根节点
+            x.red = true; // 新插入的节点标为红色
+            for (TreeNode<K,V> xp, xpp, xppl, xppr;;) {// xp：x parent当前节点的父节点、xpp：x parent parent祖父节点、xppl：x parent parent left左叔叔节点、xppr：x parent parent right右叔叔节点
+                if ((xp = x.parent) == null) { // L1 // 如果父节点为空、说明当前节点就是根节点，那么把当前节点标为黑色，返回当前节点
                     x.red = false;
-                    return x;
-                }
-                else if (!xp.red || (xpp = xp.parent) == null)
-                    return root;
-                if (xp == (xppl = xpp.left)) {
-                    if ((xppr = xpp.right) != null && xppr.red) {
-                        xppr.red = false;
-                        xp.red = false;
-                        xpp.red = true;
-                        x = xpp;
+                    return x; // 循环出口 1
+                }// 后面均为 父节点不为空
+                else if (!xp.red || (xpp = xp.parent) == null) // L2 // 若父节点为黑色 或 [父节点为红色 但是 祖父节点为空]
+                    return root;// 循环出口 2. 则不需要调整,因为新插入的节点会初始化为红色节点,红色节点是不会影响树的平衡的
+                if (xp == (xppl = xpp.left)) { // L3 // 如果父节点是 祖父节点的 左孩子
+                    if ((xppr = xpp.right) != null && xppr.red) { // L3_1 // 如果右叔叔不为空 并且 为红色. 则将父亲节点和叔叔节点都改成黑色,然后祖父节点改成红色即可
+                        xppr.red = false; // 右叔叔置为黑色
+                        xp.red = false; // 父节点置为黑色
+                        xpp.red = true; // 祖父节点置为红色
+                        x = xpp; // 运行到这里之后，就又会进行下一轮的循环了，将 祖父节点 当做处理的 起始节点
                     }
-                    else {
-                        if (x == xp.right) {
-                            root = rotateLeft(root, x = xp);
-                            xpp = (xp = x.parent) == null ? null : xp.parent;
+                    else { // L3_2 // 如果右叔叔不存在 或者 为黑色
+                        if (x == xp.right) { // L3_2_1 // 如果当前插入的节点是 父节点的右孩子,则将父节点 左旋
+                            root = rotateLeft(root, x = xp); // 父节点左旋
+                            xpp = (xp = x.parent) == null ? null : xp.parent; // 获取祖父节点
                         }
-                        if (xp != null) {
-                            xp.red = false;
-                            if (xpp != null) {
-                                xpp.red = true;
-                                root = rotateRight(root, xpp);
+                        if (xp != null) { // L3_2_2 父节点置黑,祖父置红. 祖父右旋 // 如果父节点不为空
+                            xp.red = false; // 父节点 置为黑色
+                            if (xpp != null) { // 祖父节点不为空
+                                xpp.red = true; // 祖父节点置为 红色
+                                root = rotateRight(root, xpp); // 祖父节点右旋
                             }
                         }
                     }
                 }
-                else {
-                    if (xppl != null && xppl.red) {
-                        xppl.red = false;
-                        xp.red = false;
-                        xpp.red = true;
-                        x = xpp;
+                else { // L4 // 若 父节点 是 祖父节点 的 右孩子
+                    if (xppl != null && xppl.red) { // L4_1 // 若 左叔叔 是红色. 将叔叔 和 父节点 置黑,祖先置红
+                        xppl.red = false; // 左叔叔置为 黑色
+                        xp.red = false; // 父节点置为黑色
+                        xpp.red = true; // 祖父置为红色
+                        x = xpp; // 运行到这里之后,就又会进行下一轮的循环了,将 祖父节点 当做处理的 起始节点
                     }
-                    else {
-                        if (x == xp.left) {
-                            root = rotateRight(root, x = xp);
-                            xpp = (xp = x.parent) == null ? null : xp.parent;
+                    else { // L4_2 // 如果左叔叔为空或者是黑色
+                        if (x == xp.left) { // L4_2_1 // 如果当前节点是个左孩子
+                            root = rotateRight(root, x = xp); // 针对父节点做右旋
+                            xpp = (xp = x.parent) == null ? null : xp.parent; // 获取祖父节点
                         }
-                        if (xp != null) {
-                            xp.red = false;
-                            if (xpp != null) {
-                                xpp.red = true;
-                                root = rotateLeft(root, xpp);
+                        if (xp != null) { // L4_2_2 父节点置黑.祖父置红,祖父左旋 // 如果父节点不为空
+                            xp.red = false; // 父节点置为黑色
+                            if (xpp != null) { // 如果祖父节点不为空
+                                xpp.red = true; // 祖父节点置为红色
+                                root = rotateLeft(root, xpp); // 针对祖父节点做左旋
                             }
                         }
                     }
