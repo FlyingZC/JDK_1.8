@@ -1449,7 +1449,7 @@ public abstract class AbstractQueuedSynchronizer
         return false;
     }
 
-    /**
+    /** 阻塞队列中的第一个节点是独占式的
      * Returns {@code true} if the apparent first queued thread, if one
      * exists, is waiting in exclusive mode.  If this method returns
      * {@code true}, and the current thread is attempting to acquire in
