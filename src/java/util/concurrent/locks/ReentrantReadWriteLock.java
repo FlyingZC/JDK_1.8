@@ -367,16 +367,16 @@ public class ReentrantReadWriteLock
          */
 
         protected final boolean tryRelease(int releases) {
-            if (!isHeldExclusively())
+            if (!isHeldExclusively()) // 释放独占锁,持有独占锁的线程一定是当前线程
                 throw new IllegalMonitorStateException();
-            int nextc = getState() - releases;
-            boolean free = exclusiveCount(nextc) == 0;
-            if (free)
+            int nextc = getState() - releases; // 计数 减 1
+            boolean free = exclusiveCount(nextc) == 0; // 写锁 包括重入 计数减小到 0
+            if (free) // 所有写锁都释放掉了
                 setExclusiveOwnerThread(null);
             setState(nextc);
-            return free;
+            return free; // 若返回true,后续会进行唤醒后继节点的操作
         }
-
+        // 1.写锁是独占锁 2.若有读锁被占用,写锁获取是要进入到阻塞队列中等待的
         protected final boolean tryAcquire(int acquires) {
             /*
              * Walkthrough:
@@ -392,20 +392,20 @@ public class ReentrantReadWriteLock
             Thread current = Thread.currentThread();
             int c = getState();
             int w = exclusiveCount(c);
-            if (c != 0) {
-                // (Note: if c != 0 and w == 0 then shared count != 0)
-                if (w == 0 || current != getExclusiveOwnerThread())
-                    return false;
+            if (c != 0) { // 有线程持有锁
+                // (Note: if c != 0 and w == 0 then shared count != 0) // 1. c != 0 && w == 0 : 写锁可用(即 w == 0),但有线程持有读锁( c != 0 也可能是自己持有)
+                if (w == 0 || current != getExclusiveOwnerThread()) // 2. c != 0 && w != 0 && current != getExclusiveOwnerThread() 有其他线程持有写锁
+                    return false; // 即 只要有 读锁 或 写锁 被占用,这次就不能获取到写锁
                 if (w + exclusiveCount(acquires) > MAX_COUNT)
                     throw new Error("Maximum lock count exceeded");
                 // Reentrant acquire
-                setState(c + acquires);
+                setState(c + acquires); // 无需 CAS,能到这里的,只可能是写锁重入,不然在上面的 if 就拦截了
                 return true;
             }
             if (writerShouldBlock() ||
-                !compareAndSetState(c, c + acquires))
+                !compareAndSetState(c, c + acquires)) // 若写锁获取不需要 block,则进行 CAS,成功就代表获取到了写锁
                 return false;
-            setExclusiveOwnerThread(current);
+            setExclusiveOwnerThread(current); // 标识 持有独占锁的线程为当前线程
             return true;
         }
 
@@ -414,29 +414,29 @@ public class ReentrantReadWriteLock
             if (firstReader == current) {
                 // assert firstReaderHoldCount > 0;
                 if (firstReaderHoldCount == 1)
-                    firstReader = null;
+                    firstReader = null;// 重入次数已经为 0
                 else
-                    firstReaderHoldCount--;
+                    firstReaderHoldCount--;// 重入计数减 1
             } else {
-                HoldCounter rh = cachedHoldCounter;
-                if (rh == null || rh.tid != getThreadId(current))
-                    rh = readHolds.get();
-                int count = rh.count;
-                if (count <= 1) {
-                    readHolds.remove();
-                    if (count <= 0)
+                HoldCounter rh = cachedHoldCounter; // 最后一次获取读锁的线程的相关信息
+                if (rh == null || rh.tid != getThreadId(current)) // 若不是当前线程
+                    rh = readHolds.get(); // 从 ThreadLocal里取出当前线程 持有的 读锁信息, 赋值给 rh
+                int count = rh.count; // 获取当前线程持有的 读锁的 重入计数
+                if (count <= 1) { // <= 1 再释放锁后 就不再持有锁了
+                    readHolds.remove(); // 从 ThreadLocal中移除
+                    if (count <= 0) // 调 一次 lock() 多次 unlock()的情况,抛异常
                         throw unmatchedUnlockException();
                 }
-                --rh.count;
+                --rh.count;// 重入计数减 1
             }
             for (;;) {
                 int c = getState();
-                int nextc = c - SHARED_UNIT;
+                int nextc = c - SHARED_UNIT; // nextc 是 state 高 16 位减 1 后的值 (读锁计数减 1)
                 if (compareAndSetState(c, nextc))
                     // Releasing the read lock has no effect on readers,
                     // but it may allow waiting writers to proceed if
                     // both read and write locks are now free.
-                    return nextc == 0;
+                    return nextc == 0; // 若 nextc == 0,即为 state 全部 32 位都为 0,即读锁和写锁全都释放了,这种情况返回 true,用于后续 唤醒 后继节点 中的 获取写锁 的 线程
             }
         }
 
@@ -669,7 +669,7 @@ public class ReentrantReadWriteLock
     static final class NonfairSync extends Sync {
         private static final long serialVersionUID = -8159625535654395037L;
         final boolean writerShouldBlock() {
-            return false; // writers can always barge
+            return false; // writers can always barge 非公平模式写锁优先级高于读锁,一直直接用 CAS 去抢锁,抢不到后面再去排队
         }
         final boolean readerShouldBlock() { // 判断获取读锁的线程是否需要被阻塞
             /* As a heuristic to avoid indefinite writer starvation,
@@ -689,7 +689,7 @@ public class ReentrantReadWriteLock
     static final class FairSync extends Sync {
         private static final long serialVersionUID = -2274990926593161451L;
         final boolean writerShouldBlock() {
-            return hasQueuedPredecessors();
+            return hasQueuedPredecessors(); // 有前驱节点等待获取锁
         }
         final boolean readerShouldBlock() {
             return hasQueuedPredecessors();

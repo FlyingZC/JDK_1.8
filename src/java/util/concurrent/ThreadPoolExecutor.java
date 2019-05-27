@@ -524,7 +524,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      */
     private volatile long keepAliveTime;
 
-    /**
+    /** 如果为 false（默认），即使空闲，核心线程也会保持 alive状态。若为true，则核心线程使用 keepAliveTime超时等待工作
      * If false (default), core threads stay alive even when idle.
      * If true, core threads use keepAliveTime to time out waiting
      * for work.
@@ -1043,7 +1043,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      * @return task, or null if the worker must exit, in which case
      *         workerCount is decremented
      */
-    private Runnable getTask() {
+    private Runnable getTask() { // 获取任务
         boolean timedOut = false; // Did the last poll() time out?
 
         for (;;) {
@@ -1052,26 +1052,26 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
 
             // Check if queue empty only if necessary.
             if (rs >= SHUTDOWN && (rs >= STOP || workQueue.isEmpty())) {
-                decrementWorkerCount();
+                decrementWorkerCount(); // CAS 操作,减少工作线程数
                 return null;
             }
 
             int wc = workerCountOf(c);
 
             // Are workers subject to culling?
-            boolean timed = allowCoreThreadTimeOut || wc > corePoolSize;
+            boolean timed = allowCoreThreadTimeOut || wc > corePoolSize; // 允许核心线程数内的线程被回收,或当前线程数超过了核心线程数,则有可能发生超时关闭
 
             if ((wc > maximumPoolSize || (timed && timedOut))
-                && (wc > 1 || workQueue.isEmpty())) {
-                if (compareAndDecrementWorkerCount(c))
+                && (wc > 1 || workQueue.isEmpty())) { // (线程数超过最大线程数 或 允许超时并且超时了) 并且 (线程数 > 1 或 虽然线程数小于1但是队列是空的)
+                if (compareAndDecrementWorkerCount(c)) // cas减少线程数
                     return null;
-                continue;
+                continue; // 进行下一次循环
             }
 
             try {
                 Runnable r = timed ?
                     workQueue.poll(keepAliveTime, TimeUnit.NANOSECONDS) :
-                    workQueue.take();
+                    workQueue.take(); // 到 workQueue 中获取任务
                 if (r != null)
                     return r;
                 timedOut = true;
@@ -1131,7 +1131,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
         w.unlock(); // allow interrupts
         boolean completedAbruptly = true;
         try {
-            while (task != null || (task = getTask()) != null) { // 循环调用 getTask 获取任务
+            while (task != null || (task = getTask()) != null) { // 循环调用 getTask() 获取任务
                 w.lock();
                 // If pool is stopping, ensure thread is interrupted;
                 // if not, ensure thread is not interrupted.  This
