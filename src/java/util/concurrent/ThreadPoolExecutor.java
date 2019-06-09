@@ -1146,7 +1146,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
                     beforeExecute(wt, task);// 这是一个钩子方法，留给需要的子类实现
                     Throwable thrown = null;
                     try {
-                        task.run();// 执行任务
+                        task.run();// 执行任务,比如可能调用 futureTask.run()
                     } catch (RuntimeException x) {
                         thrown = x; throw x;
                     } catch (Error x) {
@@ -1154,7 +1154,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
                     } catch (Throwable x) {
                         thrown = x; throw new Error(x);// 这里不允许抛出 Throwable，所以转换为 Error
                     } finally {
-                        afterExecute(task, thrown);// 也是一个钩子方法，将 task 和异常作为参数，留给需要的子类实现
+                        afterExecute(task, thrown);// 也是一个钩子方法，将 task 和异常作为参数，留给需要的子类实现,可以做后续的异常处理
                     }
                 } finally {
                     task = null;// 置空 task，准备 getTask 获取下一个任务

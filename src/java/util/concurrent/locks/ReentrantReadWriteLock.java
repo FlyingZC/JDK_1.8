@@ -436,7 +436,7 @@ public class ReentrantReadWriteLock
                     // Releasing the read lock has no effect on readers,
                     // but it may allow waiting writers to proceed if
                     // both read and write locks are now free.
-                    return nextc == 0; // 若 nextc == 0,即为 state 全部 32 位都为 0,即读锁和写锁全都释放了,这种情况返回 true,用于后续 唤醒 后继节点 中的 获取写锁 的 线程
+                    return nextc == 0; // 若 nextc == 0,即为 state 全部 32 位都为 0,即读锁和写锁全都释放了,这种情况返回 true,用于后续 唤醒 后继节点 中的 获取读锁和写锁 的 线程
             }
         }
 

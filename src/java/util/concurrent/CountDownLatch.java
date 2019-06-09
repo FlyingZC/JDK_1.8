@@ -168,20 +168,20 @@ public class CountDownLatch {
         int getCount() {
             return getState();
         }
-        // 只有当 state == 0 的时候，这个方法才会返回 1
+        // 只有当 state == 0 的时候，这个方法才会返回 1.失败返回负值
         protected int tryAcquireShared(int acquires) {
             return (getState() == 0) ? 1 : -1;
         }
-        // 只有当 state 减为 0 的时候, tryReleaseShared 才返回 true. 其他情况返回 false
+        // 每次调用都将 state 值减 1.只有当 state 减为 0 的时候, tryReleaseShared 才返回 true. 其他情况返回 false
         protected boolean tryReleaseShared(int releases) {
             // Decrement count; signal when transition to zero
             for (;;) {
                 int c = getState();
                 if (c == 0)
                     return false;
-                int nextc = c-1;
+                int nextc = c-1; // state减 1
                 if (compareAndSetState(c, nextc))
-                    return nextc == 0;
+                    return nextc == 0; // state减为 0,返回 true
             }
         }
     }

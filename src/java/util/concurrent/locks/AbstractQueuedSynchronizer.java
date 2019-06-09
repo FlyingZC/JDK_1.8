@@ -1339,7 +1339,7 @@ public abstract class AbstractQueuedSynchronizer
      */
     public final boolean releaseShared(int arg) {
         if (tryReleaseShared(arg)) {// 当 state减小到 0
-            doReleaseShared(); // 唤醒 获取写锁的线程
+            doReleaseShared(); // 唤醒 阻塞队列中的线程
             return true;
         }
         return false;
