@@ -794,7 +794,7 @@ public abstract class AbstractQueuedSynchronizer
      */
     private static boolean shouldParkAfterFailedAcquire(Node pred, Node node) {
         int ws = pred.waitStatus;// 前驱节点的 waitStatus
-        if (ws == Node.SIGNAL)// 前驱节点的 waitStatus = -1,说明 前驱节点 状态正常，当前线程需要挂起，直接可以返回true
+        if (ws == Node.SIGNAL)// 前驱节点的 waitStatus = -1,说明 前驱节点 状态正常，当前线程需要挂起，直接可以返回true.然后外面调用的地方挂起当前线程.
             /*
              * This node has already set status asking a release
              * to signal it, so it can safely park.
@@ -864,7 +864,7 @@ public abstract class AbstractQueuedSynchronizer
                     setHead(node);// 获取到锁 将当前节点设置成 头结点
                     p.next = null; // help GC
                     failed = false;
-                    return interrupted;
+                    return interrupted; // 循环出口
                 }
                 if (shouldParkAfterFailedAcquire(p, node) && // 尝试获取锁失败后 应该挂起
                     parkAndCheckInterrupt())// 挂起当前线程直到被其他线程唤醒. 走到这个分支说明 要么当前 node本来就不是队头,要么就是 tryAcquire(arg)没有抢赢别人
